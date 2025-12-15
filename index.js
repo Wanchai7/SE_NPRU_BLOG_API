@@ -2,6 +2,8 @@ const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
 const mongoose = require("mongoose");
+const userRouter = require("./routers/user.router");
+const postRouter = require("./routers/post.router")
 
 const app = express();
 const PORT = process.env.PORT;
@@ -28,6 +30,9 @@ if (!DB_URL) {
       console.error("MongoDB connection error:", error.message);
     });
 }
+// use Router path หรือ URL http://localhost:5000/api/v1/user/...
+app.use("/api/v1/user", userRouter);
+app.use("/api/v1/post", postRouter);
 
 // เชื่อมต่อหน้าเว็บหรือการเชื่อม frontend
 app.listen(PORT, () => {

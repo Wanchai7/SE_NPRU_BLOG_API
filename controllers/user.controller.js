@@ -1,109 +1,90 @@
-const UserModel = require("../models/User");
+const UserModel = require("../models/user.model.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const secret = process.env.SECRET;
 
 exports.register = async (req, res) => {
-    const {username, password} =req;
-    if(!username || !password){
-        res.status(400).send({message:"กรุณากรอก ยูชเซอร์ และ รหัสผ่าน",});
-    }
-    const existingUser = await UserModel.findOne({ username });
-    if(existingUser){
-        return res.status(400).send({message: "This username is already existed",});
-    }
-    try {
-        const salt = bcrypt.genSaltSync(10);
-        const hashedPassword = bcrypt.hashSync(password,salt);
-        const user = await UserModel.create({
-            username,
-            password:hashedPassword,
-        });
-        res.send({
-            message:"สมัครสมาชิกสำเร็จ",
-        })
-    } catch (error) {
-        res.status(500).send({message: error.message || "Some errors occurred while registering a new user",});
-    }
+  // แก้ไข: ต้องรับค่าจาก req.body ไม่ใช่ req เฉยๆ
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    // เพิ่ม return เพื่อหยุดการทำงานหากเงื่อนไขเป็นจริง
+    return res.status(400).send({ message: "กรุณากรอก ยูชเซอร์ และ รหัสผ่าน" });
+  }
+
+  const existingUser = await UserModel.findOne({ username });
+  if (existingUser) {
+    return res
+      .status(400)
+      .send({ message: "This username is already existed" });
+  }
+
+  try {
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = bcrypt.hashSync(password, salt);
+
+    // ไม่จำเป็นต้องประกาศ user ในตัวแปรถ้าไม่ได้ใช้ต่อ แต่ create เก็บไว้ได้
+    await UserModel.create({
+      username,
+      password: hashedPassword,
+    });
+
+    res.send({
+      message: "สมัครสมาชิกสำเร็จ",
+    });
+  } catch (error) {
+    res.status(500).send({
+      message:
+        error.message || "Some errors occurred while registering a new user",
+    });
+  }
 };
 
-exports.login =async (req, res) => {
+exports.login = async (req, res) => {
+  // แก้ไข: Syntax การดึงค่าผิด ต้องดึงค่าออกมาก่อนแล้วค่อยเช็ค if
+  //นำข้อมูลมาจาก req.body
+  const { username, password } = req.body;
+//เช็คว่าใส่ username และ รหัสผ่าน ใส่มาครบมั้ย
+  if (!username || !password) {
+    return res
+      .status(400)
+      .send({ message: "Please provide username and password" });
+  }
+//เช็คว่า username ที่ส่งมาตรงกับ username ในฐานข้อมูลมั้ย
+  try {
+    // const userDoc = await UserModel.findOne({ username:username //ถ้าเหมือนกันให้ลดรูปเหลือแค่ตัวเดียว});
+    const userDoc = await UserModel.findOne({ username });
+    if (!userDoc) {
+      return res.status(404).send({ message: "User not found" });
+    }
 
+    const isPasswordMatched = bcrypt.compareSync(password, userDoc.password);
+    if (!isPasswordMatched) {
+      return res.status(401).send({ message: "Invalid credentials" });
+    }
+
+    // Login successfully
+    jwt.sign({ username, id: userDoc._id }, secret, {}, (err, token) => {
+      // แก้ไข: id(err) เป็น if(err)
+      if (err) {
+        return res
+          .status(500)
+          .send({ message: "Internal server error: Authentication failed" });
+      }
+      // token generation
+      res.send({
+        message: "User login in successfully",
+        id: userDoc._id,
+        username,
+        accessToken: token,
+      });
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .send({
+        message: error.message || "Some errors occurred while logging in user",
+      });
+  }
 };
-
-// const UserModel = require("../models/User");
-// const bcrypt = require("bcrypt");
-// const jwt = require("jsonwebtoken");
-// require("dotenv").config();
-// const secret = process.env.SECRET;
-
-// // --- REGISTER ---
-// exports.register = async (req, res) => {
-//   const { username, password } = req.body;
-
-//   try {
-//     // 1. ตรวจสอบว่ามี User นี้อยู่แล้วหรือไม่ (Optional แต่แนะนำ)
-//     const existingUser = await UserModel.findOne({ username });
-//     if (existingUser) {
-//       return res.status(400).json({ message: "Username already exists" });
-//     }
-
-//     // 2. เข้ารหัส Password (Hash)
-//     const salt = await bcrypt.genSalt(10);
-//     const hashedPassword = await bcrypt.hash(password, salt);
-
-//     // 3. สร้าง User ใหม่
-//     const userDoc = await UserModel.create({
-//       username,
-//       password: hashedPassword,
-//     });
-
-//     // 4. ส่งข้อมูลกลับ (ไม่ควรส่ง password กลับไป)
-//     res.json({ id: userDoc._id, username: userDoc.username });
-//   } catch (e) {
-//     console.log(e);
-//     res.status(400).json(e);
-//   }
-// };
-
-// // --- LOGIN ---
-// exports.login = async (req, res) => {
-//   const { username, password } = req.body;
-
-//   try {
-//     // 1. ค้นหา User จาก Username
-//     const userDoc = await UserModel.findOne({ username });
-
-//     // ถ้าไม่เจอ User
-//     if (!userDoc) {
-//       return res.status(400).json("User not found");
-//     }
-
-//     // 2. ตรวจสอบ Password (เทียบค่าที่รับมา กับค่าที่ Hash ไว้ใน DB)
-//     const passOk = await bcrypt.compare(password, userDoc.password);
-
-//     // ถ้า Password ไม่ตรง
-//     if (!passOk) {
-//       return res.status(400).json("Wrong credentials");
-//     }
-
-//     // 3. ถ้าถูกต้อง ให้สร้าง JWT Token
-//     // payload คือข้อมูลที่จะฝังใน token (เช่น username, id)
-//     jwt.sign({ username, id: userDoc._id }, secret, {}, (err, token) => {
-//       if (err) throw err;
-
-//       // ส่ง Token กลับไป (ผ่าน Cookie หรือ JSON แล้วแต่การใช้งาน)
-//       // ตัวอย่างนี้ส่งผ่าน Cookie และ JSON
-//       res.cookie("token", token).json({
-//         id: userDoc._id,
-//         username,
-//         token: token, // ส่ง token กลับไปให้ frontend เก็บด้วยก็ได้
-//       });
-//     });
-//   } catch (e) {
-//     console.log(e);
-//     res.status(400).json(e);
-//   }
-// };
-
