@@ -97,3 +97,58 @@ exports.getAuthorId = async (req, res) => {
     });
   }
 };
+
+exports.updateById = async (req, res) => {
+  try {
+    //เช็คว่าไอดี Post กับ Author ตรงกันมั้ย
+    const { id, authorId } = req.params;
+    if (!id || !authorId) {
+      return res.status(400).json({ message: "id and authorId are required!" });
+    }
+    //ส่งข้อมูลมามั้ยครบมั้ยในการอัพเดพ
+    const { title, summary, content, cover, author } = req.body;
+    // ถ้า “ไม่มีค่าเลยสัก field เดียว” → ให้ error
+    if (!title || !summary || !content || !cover || !author) {
+      return res.status(400).json({ message: "at all field is required" });
+    }
+
+    const updated = await PostModel.findOneAndUpdate(
+      { _id: id, author: authorId },
+      { title, summary, content, cover },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    res.json({ message: "Post Updated Successfully!" });
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(500)
+      .json({ message: "Server error at update by id", error: error });
+  }
+};
+
+exports.deletePost = async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        return res.status(400).json({ message: "id is required!" });
+      }
+      const { author } = req.body;
+      if (!author) {
+        return res.status(400).json({ message: "author d is missing" });
+      }
+
+      const deleted = await PostModel.findOneAndDelete({ _id: id, author });
+      if (!deleted) {
+        return res.status(500).json({ message: "Can't Delete The Post" });
+      }
+
+      res.json({ message: "Post Deleted Successfully" });
+    } catch (error) {
+      return res.status(500).json({ message: "Server error at delete by id" });
+    }
+};
