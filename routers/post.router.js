@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const postController = require("../controllers/post.controller");
+const authjwt = require("../middlewares/authJWT.middleware");
 
 // http://localhost:5000/api/v1/user/post
-router.post("/post", postController.createPost);
+router.post("/post",authjwt.verifyToken, postController.createPost);
 
 // http://localhost:5000/api/v1/user/post
 router.get("/post", postController.getPosts);
@@ -15,10 +16,9 @@ router.get("/:id", postController.getById);
 router.get("/author/:id", postController.getAuthorId);
 
 // http://localhost:5000/api/v1/user/post/1
-router.put("/:authorId/:id", postController.updateById);
+router.put("/:authorId/:id", authjwt.verifyToken, postController.updateById);
 
 // http://localhost:5000/api/v1/user/post/1
-router.delete("/:authorId/:id", postController.deletePost);
-
+router.delete("/:authorId/:id",authjwt.verifyToken, postController.deletePost);
 
 module.exports = router;
