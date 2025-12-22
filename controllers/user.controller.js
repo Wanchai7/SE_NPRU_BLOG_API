@@ -74,7 +74,7 @@ exports.login = async (req, res) => {
       }
       // token generation
       res.send({
-        message: "User login in successfully",
+        message: "เข้าสู่ระบบสำเร็จ",
         id: userDoc._id,
         username,
         accessToken: token,
