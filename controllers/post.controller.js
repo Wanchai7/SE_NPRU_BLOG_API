@@ -1,11 +1,14 @@
 const PostModel = require("../models/post.model");
 
 exports.createPost = async (req, res) => {
+  if (!req.cover) {
+    return res.status(400).json({ message: "image is require" });
+  }
   //ทั้งหมดนี้อยู่ใน body require
-  const { title, summary, content, cover } = req.body;
+  const { title, summary, content } = req.body;
   const authorId = req.authorId;
   //เช็คว่าสงข้อมูลว่าครบมั้ย title, summary, content, cover, author
-  if (!title || !summary || !content || !cover) {
+  if (!title || !summary || !content) {
     //
     return res.status(400).send({
       // คืนข้อความไปว่าให้กรอกทุกช่องถ้าหากกรอกข้อมูลไม่ครบ
@@ -18,7 +21,7 @@ exports.createPost = async (req, res) => {
       title,
       summary,
       content,
-      cover,
+      cover: req.cover.firebaseUrl,
       author: authorId,
     });
     //เช็ค postDoc

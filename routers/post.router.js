@@ -2,9 +2,16 @@ const express = require("express");
 const router = express.Router();
 const postController = require("../controllers/post.controller");
 const authjwt = require("../middlewares/authJWT.middleware");
+const { upload, uploadFirebase } = require("../middlewares/file.miffleware");
 
 // http://localhost:5000/api/v1/user/post
-router.post("/post", authjwt.verifyToken, postController.createPost);
+router.post(
+  "/post",
+  authjwt.verifyToken,
+  upload,
+  uploadToFirebase,
+  postController.createPost
+);
 
 // http://localhost:5000/api/v1/user/post
 router.get("/post", postController.getPosts);
