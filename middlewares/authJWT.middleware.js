@@ -4,24 +4,20 @@ const secret = process.env.SECRET;
 
 const verifyToken = (req, res, next) => {
   const token = req.headers["x-access-token"];
+  console.log(token);
+
   if (!token) {
-    return res.status(401).send({
-      message: "Token is missing",
-    });
+    return res.status(401).send({ message: "Token is missing" });
   }
-  jwt.verify(token, secret, (error, decoded) => {
-    if (error)
-      return res.status(403).send({
-        message: "Access Forbidden",
-      });
-    // ถ้ามีก็สามารถเข้าได้
+  jwt.verify(token, secret, (err, decoded) => {
+    if (err) return res.status(403).send({ message: "Access Forbidden" });
     req.username = decoded.username;
     req.authorId = decoded.id;
     next();
   });
 };
 
-const authjwt = {
+const authJwt = {
   verifyToken,
 };
-module.exports = authjwt;
+module.exports = authJwt;
