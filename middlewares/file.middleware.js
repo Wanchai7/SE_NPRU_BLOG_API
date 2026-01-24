@@ -1,18 +1,11 @@
 const multer = require("multer");
 const path = require("path");
-const firebaseConfig = require("../config/firebase.config");
+const supabaseConfig = require("../config/supabase.config");
 
-const {
-  getStorage,
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-} = require("firebase/storage");
+const { createClient } = require("@supabase/supabase-js");
 
-// Initialize Firebase Storage
-const { initializeApp } = require("firebase/app");
-const app = initializeApp(firebaseConfig);
-const firebaseStorage = getStorage(app);
+// Initialize Supabase Client
+const supabase = createClient(supabaseConfig.url, supabaseConfig.key);
 
 //set storage engine
 const upload = multer({
@@ -38,35 +31,45 @@ function checkFileType(file, cb) {
   }
 }
 
-//upload to firebase storage
-async function uploadToFirebase(req, res, next) {
+//upload to supabase storage
+async function uploadToSupabase(req, res, next) {
   if (!req.file) {
     console.log("No file to upload");
     next();
     return;
   }
-  //save location
-  const storageRef = ref(firebaseStorage, `uploads/${req.file.originalname}`);
 
-  const metadata = {
-    contentType: req.file.mimetype,
-  };
   try {
-    const snapshot = await uploadBytesResumable(
-      storageRef,
-      req.file.buffer,
-      metadata
-    );
-    //get url from firebase
-    req.file.firebaseUrl = await getDownloadURL(snapshot.ref);
-    console.log(req.file.firebaseUrl);
+    // Generate unique filename
+    const fileName = `${Date.now()}-${req.file.originalname}`;
+
+    // Upload to Supabase Storage
+    const { data, error } = await supabase.storage
+      .from("uploads") // bucket name
+      .upload(fileName, req.file.buffer, {
+        contentType: req.file.mimetype,
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    // Get public URL
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("uploads").getPublicUrl(fileName);
+
+    req.file.supabaseUrl = publicUrl;
+    console.log(req.file.supabaseUrl);
     next();
   } catch (error) {
     res.status(500).json({
       message:
-        error.message || "Something went wrong while uploading to firebase",
+        error.message || "Something went wrong while uploading to supabase",
     });
   }
 }
 
-module.exports = { upload, uploadToFirebase };
+module.exports = { upload, uploadToSupabase };

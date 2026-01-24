@@ -1,4 +1,4 @@
-const UserModel = require("../models/User");
+const UserModel = require("../models/user.model");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -61,7 +61,7 @@ exports.login = async (req, res) => {
       }
       //token generation
       res.send({
-        message: "User logged in successfully",
+        message: "เข้าสู่ระบบสำเร็จ",
         id: userDoc._id,
         username,
         accessToken: token,

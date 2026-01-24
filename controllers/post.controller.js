@@ -1,4 +1,4 @@
-const PostModel = require("../models/Post");
+const PostModel = require("../models/post.model");
 
 exports.createPost = async (req, res) => {
   // console.log(req.file);
@@ -18,7 +18,7 @@ exports.createPost = async (req, res) => {
       title,
       summary,
       content,
-      cover: req.file.firebaseUrl,
+      cover: req.file.supabaseUrl,
       author: authorId,
     });
     if (!postDoc) {

@@ -2,14 +2,14 @@ const express = require("express");
 const router = express.Router();
 const postController = require("../controllers/post.controller");
 const authJwt = require("../middlewares/authJWT.middleware");
-const { upload, uploadToFirebase } = require("../middlewares/file.middleware");
+const { upload, uploadToSupabase } = require("../middlewares/file.middleware");
 
 //http://localhost:5000/api/v1/post
 router.post(
   "",
   authJwt.verifyToken,
   upload,
-  uploadToFirebase,
+  uploadToSupabase,
   postController.createPost
 );
 
